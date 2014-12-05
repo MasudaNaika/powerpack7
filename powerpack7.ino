@@ -72,7 +72,7 @@ volatile struct {
     uint8_t soundDutyShift;
     uint8_t opMode;           // 動作モード
     int8_t notchPos;          // マスコン位置
-    uint16_t trainSpeed;      // realSpeed * 256
+    uint16_t trainSpeed;     // realSpeed * 256
     uint16_t frequency;       // sound frequency
     
     // LCD表示更新用変数
@@ -86,6 +86,10 @@ volatile struct {
     TRAIN_DATA *trainDataPtr;
     int8_t maxNotch;
     int8_t minNotch;
+
+    uint8_t startingAccel;
+    uint16_t constantAccelSpeed;    // realSpeed * 256
+    
     uint8_t numPwmDataA;
     PWM_DATA *pwmDataAPtr;
     uint8_t numPwmDataB;
@@ -146,7 +150,8 @@ void setup() {
     encPinMaskB = digitalPinToBitMask(PIN_ENCB);
     
     // コンパレーター
-    ADCSRB &= ~_BV(ACME);              // 内部基準電圧
+//    ADCSRB &= ~_BV(ACME);              // 内部基準電圧
+    analogReference(INTERNAL);         // 内部基準電圧
     DIDR1 |= _BV(AIN0D);               // AIN0デジタル入力禁止
     ACSR = _BV(ACIS1) + _BV(ACIS0);    // 上昇端
     ACSR |= _BV(ACIE);                 // 割り込み許可、
@@ -199,7 +204,7 @@ void setup() {
     
     // 初期値設定
     PP.trainType = 0;           // 列車種別 0 - 10
-    PP.accelValue = 120;        // 0-255 加速係数
+    PP.accelValue = 160;        // 0-255 加速係数, 128ではマッタリしすぎ？
     PP.lightValue = 8;          // 0-31/255
     PP.lutType = 1;             // LUT type
     PP.soundDutyShift = 4;      // PWM TOP >> 4
@@ -257,6 +262,14 @@ void loop() {
 // 列車データポインタ
 inline TRAIN_DATA* getTrainDataPtr(uint8_t trainType) {
     return (TRAIN_DATA*) pgm_read_word(&trains[trainType]);
+}
+// 起動加速度 4倍値
+inline uint8_t getStartingAccel() {
+    return pgm_read_byte(&PP.trainDataPtr->startingAccel);
+}
+// 定加速度領域切り替え速度
+inline uint8_t getConstantAccelSpeed() {
+    return pgm_read_byte(&PP.trainDataPtr->constantAccelSpeed);
 }
 
 // 加速ノッチ最大速度の数
@@ -449,9 +462,10 @@ void setSound() {
         if (PP.trainSpeed <= topSpeed) {
             uint16_t startFreq = getPwmDataStartFreq(pwmDataPtr);
             uint16_t endFreq = getPwmDataEndFreq(pwmDataPtr);
+            int16_t gap = endFreq - startFreq;
             if (topSpeed > bottomSpeed) {
                 PP.frequency = startFreq + (int32_t) 
-                    (endFreq - startFreq) * (PP.trainSpeed - bottomSpeed) / (topSpeed - bottomSpeed);
+                    gap * (PP.trainSpeed - bottomSpeed) / (topSpeed - bottomSpeed);
                 setSoundPwm();
                 found = true;
                 break;
@@ -479,7 +493,7 @@ void showTitle() {
     lcd.setCursor(0, 16);
     lcd.setTextSize(FONT_SIZE_SETTING);
     lcd.println("DAVINCI32U");
-    lcd.println("   de\n");
+    lcd.println("    de\n");
     lcd.print  ("POWERPACK!");
     delay(2000);
 }
@@ -610,6 +624,9 @@ void startDriveMode() {
     PP.pwmDataAPtr = getPwmDataAPtr();
     PP.numPwmDataB = getNumPwmDataB();
     PP.pwmDataBPtr = getPwmDataBPtr();
+    
+    PP.startingAccel = getStartingAccel();
+    PP.constantAccelSpeed = getConstantAccelSpeed() << 8;
 
     // LCD表示
     showBaseDriveScreen();
@@ -762,9 +779,15 @@ void driveTrain() {
     // 加減速処理
     if (PP.notchPos > NOTCH_OFF) {
         // 速度変化量を計算する
-        uint16_t delta = (getNotchAccelDataA(PP.notchPos) * PP.accelValue2) >> 8;
+        // 加速度1km/h/s -> (1 * 4) * (128 * 128 / 256) / 256 = 1
+        uint8_t accel = (PP.trainSpeed <= PP.constantAccelSpeed)
+             ? min(PP.startingAccel, getNotchAccelDataA(PP.notchPos))
+             : PP.startingAccel * (PP.constantAccelSpeed >> 8) / (PP.trainSpeed >> 8);
+        uint16_t delta = (accel * PP.accelValue2) >> 8;
+
         // ノッチの最高速度を取得する
         uint16_t notchMaxSpeed = getNotchMaxSpeedA(PP.notchPos) << 8;
+        
         // 加速
         if (notchMaxSpeed < PP.trainSpeed) {
             // do nothing
