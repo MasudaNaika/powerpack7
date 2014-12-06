@@ -5,6 +5,7 @@
  */
  
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 
 #define F_CPU        16000000
 #define PWM_CONST    (F_CPU / 2)
@@ -54,6 +55,15 @@
 #define MENU_ITEM_TRAIN      3
 #define MENU_ITEM_LUT        4
 #define MENU_ITEM_SDUTY      5
+
+//==========================================================================================
+// param values stored in EEPROM
+//==========================================================================================
+EEMEM uint8_t eTrainType;
+EEMEM uint8_t eAccelValue;
+EEMEM uint8_t eLightValue;
+EEMEM uint8_t eLutType;
+EEMEM uint8_t eSoundDutyShift;
 
 //==========================================================================================
 // メニュー項目

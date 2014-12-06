@@ -18,7 +18,7 @@
 #include <Adafruit_GFX.h>
 #include <SPI.h>
 #include <TFT_ILI9163C.h>
-
+#include <EEPROM.h>
 #include "powerpack.h"
 #include "train.h"
 
@@ -72,7 +72,7 @@ volatile struct {
     uint8_t soundDutyShift;
     uint8_t opMode;           // 動作モード
     int8_t notchPos;          // マスコン位置
-    uint16_t trainSpeed;     // realSpeed * 256
+    uint16_t trainSpeed;      // realSpeed * 256
     uint16_t frequency;       // sound frequency
     
     // LCD表示更新用変数
@@ -197,24 +197,21 @@ void setup() {
     lcd.begin();
     lcd.setBitrate(8000000);    // 8MHz
     lcd.setRotation(1);
-    
+
     // 省電力設定
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
     
     // 初期値設定
-    PP.trainType = 0;           // 列車種別 0 - 10
-    PP.accelValue = 160;        // 0-255 加速係数, 128ではマッタリしすぎ？
-    PP.lightValue = 8;          // 0-31/255
-    PP.lutType = 1;             // LUT type
-    PP.soundDutyShift = 4;      // PWM TOP >> 4
+    loadParams();               // EEPROMから読み出す
+    
     PP.trainSpeed = 0;          // realSpeed * 256
     PP.notchPos = NOTCH_OFF;    // マスコン位置
     PP.opMode = MODE_STOP;      // 動作モード
-    
+    Serial.begin(9600);
     // 割り込みを有効にする
     sei();
-    
+
     // タイトル表示
     showTitle();
 }
@@ -254,6 +251,63 @@ void loop() {
     
     // スリープさせておくが、ほとんど寝ていない
     sleep_cpu();
+}
+
+//==========================================================================================
+// EEPROM save / looad
+//==========================================================================================
+void loadParams() {
+    
+    PP.trainType = 0;
+    PP.accelValue = 160;
+    PP.lightValue = 8;
+    PP.lutType = 1;
+    PP.soundDutyShift = 4;
+    
+    uint8_t val =  EEPROM.read((uint16_t) &eTrainType);
+    if (val < sizeof(trains) / sizeof(TRAIN_DATA*)) {
+        PP.trainType = val;
+    }
+    val = EEPROM.read((uint16_t) &eAccelValue);
+    if (val == 255) {
+        PP.accelValue = 160;
+    }
+    val =  EEPROM.read((uint16_t) &eLightValue);
+    if (val < 32) {
+        PP.lightValue = val;
+    }
+    val =  EEPROM.read((uint16_t) &eLutType);
+    if (val < sizeof(dutyLut) / sizeof(dutyLut[0])) {
+        PP.lutType = val;
+    }
+    val =  EEPROM.read((uint16_t) &eSoundDutyShift);
+    if (3 <= val & val <= 5) {
+        PP.soundDutyShift = val;
+    }
+}
+
+void saveParams() {
+    
+    uint8_t val =  EEPROM.read((uint16_t) &eTrainType);
+    if (val != PP.trainType) {
+        EEPROM.write((uint16_t) &eTrainType, PP.trainType);
+    }
+    val =  EEPROM.read((uint16_t) &eAccelValue);
+    if (val != PP.accelValue) {
+        EEPROM.write((uint16_t) &eAccelValue, PP.accelValue);
+    }
+    val =  EEPROM.read((uint16_t) &eLightValue);
+    if (val != PP.lightValue) {
+        EEPROM.write((uint16_t) &eLightValue, PP.lightValue);
+    }
+    val =  EEPROM.read((uint16_t) &eLutType);
+    if (val != PP.lutType) {
+        EEPROM.write((uint16_t) &eLutType, PP.lutType);
+    }
+    val =  EEPROM.read((uint16_t) &eSoundDutyShift);
+    if (val != PP.soundDutyShift) {
+        EEPROM.write((uint16_t) &eSoundDutyShift, PP.soundDutyShift);
+    }
 }
 
 //==========================================================================================
@@ -780,6 +834,8 @@ void driveTrain() {
     if (PP.notchPos > NOTCH_OFF) {
         // 速度変化量を計算する
         // 加速度1km/h/s -> (1 * 4) * (128 * 128 / 256) / 256 = 1
+        // 加速度計算テキトーに簡略化, a = 加速度, v = 速度, As = 初期加速度, Vc = 定加速度領域終了速度
+        // a = As (0 <= v <= Vc), a = As * Vc / v (Vc < v)
         uint8_t accel = (PP.trainSpeed <= PP.constantAccelSpeed)
              ? min(PP.startingAccel, getNotchAccelDataA(PP.notchPos))
              : PP.startingAccel * (PP.constantAccelSpeed >> 8) / (PP.trainSpeed >> 8);
@@ -973,7 +1029,7 @@ void enterSettingMode() {
                 break;
             case 4:
                 // LUT選択
-                flg = setSelectedValue(MENU_ITEM_LUT, &PP.lutType, 0, (uint16_t) sizeof(dutyLut) / sizeof(dutyLut[0]) - 1);
+                flg = setSelectedValue(MENU_ITEM_LUT, &PP.lutType, 0, sizeof(dutyLut) / sizeof(dutyLut[0]) - 1);
                 break;
             case 5:
                 // 励磁音pulse width選択　1/8, 1/16, 1/32
@@ -986,6 +1042,9 @@ void enterSettingMode() {
             return;
         }
     } while (newValue != MENU_ITEM_EXIT);
+    
+    // EEPROMに保存する
+    saveParams();
 }
 
 // 各種設定値をセットする
