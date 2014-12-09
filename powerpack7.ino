@@ -401,7 +401,7 @@ inline char* getTrainNamePtr(TRAIN_DATA *trainDataPtr) {
 // 入出力関連
 //==========================================================================================
 // 過電流チェック
-boolean isOverload() {
+inline boolean isOverload() {
     return (ACSR & _BV(ACO)) != 0;
 }
 
