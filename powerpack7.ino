@@ -15,10 +15,10 @@
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/eeprom.h>
 #include <Adafruit_GFX.h>
 #include <SPI.h>
 #include <TFT_ILI9163C.h>
-#include <EEPROM.h>
 #include "powerpack.h"
 #include "train.h"
 
@@ -150,11 +150,10 @@ void setup() {
     encPinMaskB = digitalPinToBitMask(PIN_ENCB);
     
     // コンパレーター
-//    ADCSRB &= ~_BV(ACME);              // 内部基準電圧
-    analogReference(INTERNAL);         // 内部基準電圧
+    ADCSRB &= ~_BV(ACME);              // 内部基準電圧
     DIDR1 |= _BV(AIN0D);               // AIN0デジタル入力禁止
     ACSR = _BV(ACIS1) + _BV(ACIS0);    // 上昇端
-    ACSR |= _BV(ACIE);                 // 割り込み許可、
+    ACSR |= _BV(ACIE);                 // 割り込み許可
     
     // Timerなどの設定
     motorPowerOff();
@@ -204,11 +203,10 @@ void setup() {
     
     // 初期値設定
     loadParams();               // EEPROMから読み出す
-    
     PP.trainSpeed = 0;          // realSpeed * 256
     PP.notchPos = NOTCH_OFF;    // マスコン位置
     PP.opMode = MODE_STOP;      // 動作モード
-    Serial.begin(9600);
+
     // 割り込みを有効にする
     sei();
 
@@ -229,9 +227,8 @@ void loop() {
         case MODE_DRIVE:
             if (PP.notchPos == NOTCH_BE && isBtnPressed()) {
                 // 設定モードに入る
-                enterSettingMode();
-                // STOPモードにする
                 PP.opMode = MODE_STOP;
+                enterSettingMode();
             } else if (PP.cntr == 0){
                 // 運転モードLCD更新 最大150msec位かかる
                 updateLCD();
@@ -264,23 +261,28 @@ void loadParams() {
     PP.lutType = 1;
     PP.soundDutyShift = 4;
     
-    uint8_t val =  EEPROM.read((uint16_t) &eTrainType);
+    eeprom_busy_wait();
+    uint8_t val = eeprom_read_byte(&eTrainType);
     if (val < sizeof(trains) / sizeof(TRAIN_DATA*)) {
         PP.trainType = val;
     }
-    val = EEPROM.read((uint16_t) &eAccelValue);
+    eeprom_busy_wait();
+    val = eeprom_read_byte(&eAccelValue);
     if (val == 255) {
         PP.accelValue = 160;
     }
-    val =  EEPROM.read((uint16_t) &eLightValue);
+    eeprom_busy_wait();
+    val = eeprom_read_byte(&eLightValue);
     if (val < 32) {
         PP.lightValue = val;
     }
-    val =  EEPROM.read((uint16_t) &eLutType);
+    eeprom_busy_wait();
+    val = eeprom_read_byte(&eLutType);
     if (val < sizeof(dutyLut) / sizeof(dutyLut[0])) {
         PP.lutType = val;
     }
-    val =  EEPROM.read((uint16_t) &eSoundDutyShift);
+    eeprom_busy_wait();
+    val = eeprom_read_byte(&eSoundDutyShift);
     if (3 <= val & val <= 5) {
         PP.soundDutyShift = val;
     }
@@ -288,25 +290,22 @@ void loadParams() {
 
 void saveParams() {
     
-    uint8_t val =  EEPROM.read((uint16_t) &eTrainType);
-    if (val != PP.trainType) {
-        EEPROM.write((uint16_t) &eTrainType, PP.trainType);
-    }
-    val =  EEPROM.read((uint16_t) &eAccelValue);
-    if (val != PP.accelValue) {
-        EEPROM.write((uint16_t) &eAccelValue, PP.accelValue);
-    }
-    val =  EEPROM.read((uint16_t) &eLightValue);
-    if (val != PP.lightValue) {
-        EEPROM.write((uint16_t) &eLightValue, PP.lightValue);
-    }
-    val =  EEPROM.read((uint16_t) &eLutType);
-    if (val != PP.lutType) {
-        EEPROM.write((uint16_t) &eLutType, PP.lutType);
-    }
-    val =  EEPROM.read((uint16_t) &eSoundDutyShift);
-    if (val != PP.soundDutyShift) {
-        EEPROM.write((uint16_t) &eSoundDutyShift, PP.soundDutyShift);
+//    eeprom_busy_wait();
+//    eeprom_update_byte(&eTrainType, PP.trainType); // 使えない？
+
+    eepromUpdateByte(&eTrainType, PP.trainType);
+    eepromUpdateByte(&eAccelValue, PP.accelValue);
+    eepromUpdateByte(&eLightValue, PP.lightValue);
+    eepromUpdateByte(&eLutType, PP.lutType);
+    eepromUpdateByte(&eSoundDutyShift, PP.soundDutyShift);
+}
+
+void eepromUpdateByte(uint8_t *addr, uint8_t newValue) {
+    eeprom_busy_wait();
+    uint8_t val = eeprom_read_byte(addr);
+    if (val != newValue) {
+        eeprom_busy_wait();
+        eeprom_write_byte(addr, newValue);
     }
 }
 
@@ -407,7 +406,7 @@ boolean isOverload() {
 }
 
 // 設定ボタン押下チェック
-boolean isBtnPressed() {
+inline boolean isBtnPressed() {
 //    return (PINB & _BV(PINB7)) == 0;
 //    return digitalRead(PIN_BTN) == 0;
     return (*btnPort & btnPinMask) == 0;
@@ -616,16 +615,15 @@ void alertOverload() {
 boolean delay2(uint16_t delayms) {
     
     uint32_t t = millis();
-    uint32_t ts = t;
     uint32_t te = t + delayms ;
-    boolean carry = (te < ts);
+    boolean carry = (te < t);
 
-    while (t < te || carry) {
+    while (carry || t <= te) {
         if (PP.opMode == MODE_OVERLOAD) {
             return false;
         }
         t = millis();
-        carry &= (t >= ts);
+        carry &= (te < t);
     }
     return true;
 }
@@ -938,12 +936,9 @@ void showTrainType(uint8_t value) {
 
 // 設定モード
 void enterSettingMode() {
-    
+
     // ボタンが離されるのを待つ
     waitButtonRelease();
-    
-    // 設定モードに入る
-    PP.opMode = MODE_STOP;
 
     // show menu items
     lcd.clearScreen();

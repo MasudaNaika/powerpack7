@@ -121,4 +121,3 @@ PROGMEM uint8_t dutyLut[][256] = {
     },
 
 };
-
