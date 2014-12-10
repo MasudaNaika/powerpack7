@@ -76,7 +76,6 @@ volatile struct {
     uint16_t frequency;       // sound frequency
     
     // LCD表示更新用変数
-    uint8_t cntr;
     int8_t dispNotchPos;
     uint16_t dispTrainSpeed;
     uint16_t dispFrequency;
@@ -217,6 +216,8 @@ void setup() {
 // メインループ
 void loop() {
     
+    volatile static uint8_t lcdCntr;    // LCD表示用カウンタ
+    
     switch (PP.opMode) {
         case MODE_OVERLOAD:
             // 過電流
@@ -229,11 +230,11 @@ void loop() {
                 // 設定モードに入る
                 PP.opMode = MODE_STOP;
                 enterSettingMode();
-            } else if (PP.cntr == 0){
+            } else if (lcdCntr == 0){
                 // 運転モードLCD更新 最大150msec位かかる
                 updateLCD();
             }
-            ++PP.cntr;
+            ++lcdCntr;
             break;
         case MODE_STOP:
             // MODE_STOP -> MODE_DRIVEにする
@@ -597,9 +598,9 @@ void alertOverload() {
 
     uint8_t i = 0;
     boolean flg = true;
-    while (!isBtnPressed() | isOverload()) {
+    while (!isBtnPressed() | isOverload()) {    // ここは"||"じゃない
         delay(UI_LOOP_DELAY);
-        if ((i & 0x3) == 0) {
+        if ((i & 0x7) == 0) {
             lcd.invertDisplay(flg);
             flg = !flg;
         }
@@ -607,6 +608,7 @@ void alertOverload() {
     }
     lcd.invertDisplay(false);
     waitButtonRelease();
+    delay(500);
 }
 
 // 過電流チェックつきdelay
