@@ -597,15 +597,13 @@ void alertOverload() {
 
     uint8_t i = 0;
     boolean flg = true;
-    while (isOverload()) {
-        while (!isBtnPressed()) {
-            delay(100);
-            if ((i & 0x3) == 0) {
-                lcd.invertDisplay(flg);
-                flg = !flg;
-            }
-            ++i;
+    while (!isBtnPressed() | isOverload()) {
+        delay(UI_LOOP_DELAY);
+        if ((i & 0x3) == 0) {
+            lcd.invertDisplay(flg);
+            flg = !flg;
         }
+        ++i;
     }
     lcd.invertDisplay(false);
     waitButtonRelease();
@@ -1113,10 +1111,8 @@ boolean setSelectedValue(uint8_t menuItem, volatile uint8_t *value, uint8_t minV
 //==========================================================================================
 // コンパレーター割り込み、過電流検知
 ISR(ANALOG_COMP_vect) {
-    if (PP.opMode != MODE_OVERLOAD) {
-        shutdownPower();
-        PP.opMode = MODE_OVERLOAD;
-    }
+    shutdownPower();
+    PP.opMode = MODE_OVERLOAD;
 }
 
 // TIMER4 overflow割り込み 15.6kHz
