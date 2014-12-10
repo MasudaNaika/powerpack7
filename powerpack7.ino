@@ -69,7 +69,7 @@ volatile struct {
     uint8_t accelValue2;      // 内部加速係数　(accelValue ^ 2) / 256
     uint8_t lightValue;       // 0-31/255
     uint8_t lutType ;         // LUT type
-    uint8_t soundDutyShift;
+    uint8_t soundDuty;        // 0:0, 1:1/16, 2:3/32, 3:1/8
     uint8_t opMode;           // 動作モード
     int8_t notchPos;          // マスコン位置
     uint16_t trainSpeed;      // realSpeed * 256
@@ -256,11 +256,11 @@ void loop() {
 //==========================================================================================
 void loadParams() {
     
-    PP.trainType = 0;
-    PP.accelValue = 160;
-    PP.lightValue = 8;
-    PP.lutType = 1;
-    PP.soundDutyShift = 4;
+    PP.trainType = DEFAULT_TRAIN_TYPE;
+    PP.accelValue = DEFAULT_ACCEL_VALUE;
+    PP.lightValue = DEFAULT_LIGHT_VALUE;
+    PP.lutType = DEFAULT_LUT_TYPE;
+    PP.soundDuty = DEFAULT_SOUND_DUTY;
     
     eeprom_busy_wait();
     uint8_t val = eeprom_read_byte(&eTrainType);
@@ -283,9 +283,9 @@ void loadParams() {
         PP.lutType = val;
     }
     eeprom_busy_wait();
-    val = eeprom_read_byte(&eSoundDutyShift);
-    if (3 <= val & val <= 5) {
-        PP.soundDutyShift = val;
+    val = eeprom_read_byte(&eSoundDuty);
+    if (0 <= val & val <= 3) {
+        PP.soundDuty = val;
     }
 }
 
@@ -298,7 +298,7 @@ void saveParams() {
     eepromUpdateByte(&eAccelValue, PP.accelValue);
     eepromUpdateByte(&eLightValue, PP.lightValue);
     eepromUpdateByte(&eLutType, PP.lutType);
-    eepromUpdateByte(&eSoundDutyShift, PP.soundDutyShift);
+    eepromUpdateByte(&eSoundDuty, PP.soundDuty);
 }
 
 void eepromUpdateByte(uint8_t *addr, uint8_t newValue) {
@@ -386,7 +386,7 @@ inline uint16_t getPwmDataEndFreq(PWM_DATA *pwmDataPtr) {
 
 // LUT値
 inline uint8_t getLutValue(uint8_t lutType, uint8_t duty) {
-    return pgm_read_byte(&dutyLut[lutType][duty]);
+    return pgm_read_byte(&dutyLut[lutType - 1][duty]);
 }
 
 // 設定メニュー項目ポインタ
@@ -437,8 +437,12 @@ inline void motorPowerOff() {
 
 // 走行用PWM出力, PWM4
 inline void setMotorPwm() {
-    // なかなか動きださないのでLUTを参照して低速時電圧を補正する
-    OCR4A = getLutValue(PP.lutType, PP.trainSpeed >> 8);
+    if (PP.lutType == 0) {
+        OCR4A = PP.trainSpeed >> 8;
+    } else {
+        // LUTを参照して低速時電圧を補正する
+        OCR4A = getLutValue(PP.lutType, PP.trainSpeed >> 8);
+    }
 }
 
 // 常点灯照明, PWM1
@@ -483,14 +487,41 @@ inline void setSoundPwm() {
         top = PWM_CONST / PP.frequency;
     }
 
-    OCR1B = top >> PP.soundDutyShift;    // 音のPWM duty
+    // 音のPWM duty 0, 1/16, 3/32, 1/8
+    switch(PP.soundDuty) {
+        case 1:
+            OCR1B = top >> 4;
+            break;
+        case 2:
+            OCR1B = (top >> 5) * 3;
+            break;
+        case 3:
+            OCR1B = top >> 3;
+            break;
+        default:
+            OCR1B = 0;
+            break;
+    }
     OCR1A = top;
 }
 
 // 音階を鳴らさない場合もPWM1から出力する。音の有無で速度差を生じないように
 inline void setCoastingPwm() {
     setPrescaler1();
-    OCR1B = 511 >> PP.soundDutyShift;
+    switch(PP.soundDuty) {
+        case 1:
+            OCR1B = 31;
+            break;
+        case 2:
+            OCR1B = 47;
+            break;
+        case 3:
+            OCR1B = 63;
+            break;
+        default:
+            OCR1B = 0;
+            break;
+    }
     OCR1A = 511;            // 15.6kHz
 }
 
@@ -716,7 +747,7 @@ void showBaseDriveScreen() {
     lcd.setCursor(X_CENTER, FONT_SIZE_NOTCH * FONT_HEIGHT 
         + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 1));
     lcd.print("SDuty:");
-    formattedPrint(PP.soundDutyShift, 3);
+    formattedPrint(PP.soundDuty, 3);
     // MotorDuty
     lcd.setCursor(X_LEFT, FONT_SIZE_NOTCH * FONT_HEIGHT 
         + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
@@ -961,7 +992,7 @@ void enterSettingMode() {
     showItemValue(MENU_ITEM_LUT, PP.lutType, false);
     // SDuty
     showMenuItem(MENU_ITEM_SDUTY, false);
-    showItemValue(MENU_ITEM_SDUTY, PP.soundDutyShift, false);
+    showItemValue(MENU_ITEM_SDUTY, PP.soundDuty, false);
     
     int16_t newValue = 0;
     int16_t lastValue = 0;
@@ -1024,11 +1055,11 @@ void enterSettingMode() {
                 break;
             case 4:
                 // LUT選択
-                flg = setSelectedValue(MENU_ITEM_LUT, &PP.lutType, 0, sizeof(dutyLut) / sizeof(dutyLut[0]) - 1);
+                flg = setSelectedValue(MENU_ITEM_LUT, &PP.lutType, 0, sizeof(dutyLut) / sizeof(dutyLut[0]));
                 break;
             case 5:
-                // 励磁音pulse width選択　1/8, 1/16, 1/32
-                flg = setSelectedValue(MENU_ITEM_SDUTY, &PP.soundDutyShift, 3, 5);
+                // 励磁音pulse width選択 0, 1/16, 3/32, 1/8
+                flg = setSelectedValue(MENU_ITEM_SDUTY, &PP.soundDuty, 0, 3);
                 break;
             default:
                 break;
