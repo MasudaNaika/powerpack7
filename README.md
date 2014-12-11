@@ -10,7 +10,7 @@ Davinci32u (w/ Leonardo bootloader)でパワーパックを作ってみた　３
 にインスパイヤされ、自分も作ってみたくなった。  
 
 部品待ち中→届いた！  
-![image](image/lcd_proto1.jpg)
+![lcd_proto1.jpg](image/lcd_proto1.jpg)
 
 Masuda Naika  
 640-8425  
