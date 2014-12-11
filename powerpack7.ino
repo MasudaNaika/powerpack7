@@ -194,7 +194,7 @@ void setup() {
     // LCD初期化
     lcd.begin();
     lcd.setBitrate(8000000);    // 8MHz
-    lcd.setRotation(1);
+    lcd.setRotation(2);    // 1
 
     // 省電力設定
     set_sleep_mode(SLEEP_MODE_IDLE);
