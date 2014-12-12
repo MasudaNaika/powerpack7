@@ -493,7 +493,7 @@ inline void setSoundPwm() {
             OCR1B = top >> 4;
             break;
         case 2:
-            OCR1B = (top >> 5) * 3;
+            OCR1B = (top >> 4) + (top >> 5);
             break;
         case 3:
             OCR1B = top >> 3;
