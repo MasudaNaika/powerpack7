@@ -9,8 +9,7 @@ Davinci32u (w/ Leonardo bootloader)でパワーパックを作ってみた　３
 "http://www.diotown.com/creative/2011/05/arduino-de-pwm-controller.html"  
 にインスパイヤされ、自分も作ってみたくなった。  
 
-部品待ち中→届いた！  
-![lcd_proto1.jpg](image/lcd_proto1.jpg)
+![lcd_proto1.jpg](image/powerpack7.jpg)
 
 Masuda Naika  
 640-8425  

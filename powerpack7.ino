@@ -194,7 +194,7 @@ void setup() {
     // LCD初期化
     lcd.begin();
     lcd.setBitrate(8000000);    // 8MHz
-    lcd.setRotation(2);    // 1
+    lcd.setRotation(1);    // 1
 
     // 省電力設定
     set_sleep_mode(SLEEP_MODE_IDLE);
@@ -868,7 +868,7 @@ void driveTrain() {
         uint8_t accel = (PP.trainSpeed <= PP.constantAccelSpeed)
              ? min(PP.startingAccel, getNotchAccelDataA(PP.notchPos))
              : PP.startingAccel * (PP.constantAccelSpeed >> 8) / (PP.trainSpeed >> 8);
-        uint16_t delta = (accel * PP.accelValue2) >> 8;
+        uint8_t delta = (accel * PP.accelValue2) >> 8;
 
         // ノッチの最高速度を取得する
         uint16_t notchMaxSpeed = getNotchMaxSpeedA(PP.notchPos) << 8;
@@ -883,7 +883,7 @@ void driveTrain() {
         }
     } else if (PP.notchPos < NOTCH_OFF) {
         // 速度変化量を計算する
-        uint16_t delta = PP.numNotchAccelDataB > 0
+        uint8_t delta = PP.numNotchAccelDataB > 0
             ? (getNotchAccelDataB(PP.notchPos) * PP.accelValue2) >> 8
             : (getNotchAccelDataA(PP.notchPos) * PP.accelValue2) >> 8;
         // 減速
