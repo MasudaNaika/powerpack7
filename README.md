@@ -11,6 +11,8 @@ Davinci32u (w/ Leonardo bootloader)でパワーパックを作ってみた　３
 
 ![lcd_proto1.jpg](image/powerpack7.jpg)
 
+https://www.youtube.com/watch?v=JGucmlXvMrI
+
 Masuda Naika  
 640-8425  
 4-3-30, Mastue-kita, Wakayama city
