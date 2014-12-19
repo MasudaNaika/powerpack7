@@ -156,7 +156,7 @@ void setup() {
     
     // Timerなどの設定
     motorPowerOff();
-    // TIMER1 音と常点灯照明。分周なし, 位相周波数基準PWM, TOP = OC1A, 出力 = OC1B (PB6)
+    // TIMER1 音。分周なし, 位相周波数基準PWM, TOP = OC1A, 出力 = OC1B (PB6)
     TCCR1A = _BV(COM1B1) + _BV(WGM10);
     TCCR1B = _BV(WGM13) + _BV(CS10);
 
