@@ -160,13 +160,13 @@ void setup() {
     TCCR1A = _BV(COM1B1) + _BV(WGM10);
     TCCR1B = _BV(WGM13) + _BV(CS10);
 
-    // 操作読み込み、PWM出力計算などのタイマー
+    // 操作読み込み、PWM出力計算などのタイマー、モーター出力と照明
     // TIMER4  位相周波数基準PWM, 2分周, TOP = OCR4C, OVF割り込み許可, OC4A(PC7)出力, 15.6kHz
     TCCR4A = _BV(COM4A1) + _BV(PWM4A); // OC4A出力
     TCCR4B = _BV(CS41);                // 2分周
     TCCR4D = _BV(WGM40);               // 位相周波数基準PWM
     TCCR4E = 0;
-    OCR4C = 255;                       // TOP
+    OCR4C = TIMER4_TOP_31KHZ;          // TOP 15.6kHz = 255 , 31.2kHz =127
     TIMSK4 = _BV(TOIE4);               // OVF割り込み
     
     // PWM out pins
@@ -435,7 +435,7 @@ inline void motorPowerOff() {
     OCR1B = 0;
 }
 
-// 走行用PWM出力, PWM4
+// 走行用PWM出力, PWM4, 15.6kHz
 inline void setMotorPwm() {
     if (PP.lutType == 0) {
         OCR4A = PP.trainSpeed >> 8;
@@ -443,13 +443,14 @@ inline void setMotorPwm() {
         // LUTを参照して低速時電圧を補正する
         OCR4A = getLutValue(PP.lutType, PP.trainSpeed >> 8);
     }
+    OCR4C = TIMER4_TOP_15KHZ;
 }
 
-// 常点灯照明, PWM1
+// 常点灯照明, PWM4, 31.2kHz
 inline void setLightPwm(uint8_t value) {
-    setPrescaler1();
-    OCR1B = value;            // 0/256 - 15/256
-    OCR1A = 255;              // 31kHz
+    OCR1B = 0;                    // PWM1の音を消す
+    OCR4A = value >> 1;           // 0/128 - 15/128
+    OCR4C = TIMER4_TOP_31KHZ;
 }
 
 // TIMER1、プリスケーラー、前置分周なし
@@ -522,7 +523,7 @@ inline void setCoastingPwm() {
             OCR1B = 0;
             break;
     }
-    OCR1A = 511;            // 15.6kHz
+    OCR1A = TIMER1_TOP_15KHz;    // 15.6kHz
 }
 
 // テーブルを参照して速度に応じた励磁音出力を行う
@@ -1166,7 +1167,15 @@ ISR(TIMER4_OVF_vect) {
         // 運転モードの場合は出力制御をする 120usec位かかる
          driveTrain();
     }
-    if (++timerCntr == 61) {    // 58?
+    
+    if (OCR4C == TIMER4_TOP_31KHZ) {
+        // 31.2kHzの場合カウンタを２個進める
+        timerCntr += 2;
+    } else {
+        // 15.6kHzの場合は１個
+        ++timerCntr;
+    }
+    if (timerCntr >= 61) {    // 58?
         timerCntr = 0;
     }
 }

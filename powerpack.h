@@ -19,8 +19,8 @@
 #define PIN_A0     8     // PB4, LCD A0
 #define PIN_RST    9     // PB5, LCD RST
 #define PIN_BTN    11    // PB7, Push button, pull up
-#define PIN_FET1   10    // PB6, PWM OC1B, FET1, Sound and Light, Fixed
-#define PIN_FET2   13    // PC7, PWM OC4A, FET2, Motor, Fixed
+#define PIN_FET1   10    // PB6, PWM OC1B, FET1, Sound, Fixed
+#define PIN_FET2   13    // PC7, PWM OC4A, FET2, Motor and Light, Fixed
 #define PIN_FET3   5     // PC6, FET 3, Ext power
 #define PIN_CMP    7     // PE6, Comparator input, Fixed
 #define PIN_ENCA   23    // PF0, Rotary encoder A, pull up
@@ -42,6 +42,10 @@
 //==========================================================================================
 // Constants
 //==========================================================================================
+#define TIMER1_TOP_15KHz    511
+#define TIMER4_TOP_31KHZ    127
+#define TIMER4_TOP_15KHZ    255
+
 #define NOTCH_OFF   0
 #define NOTCH_BE    -128
 
