@@ -1169,13 +1169,13 @@ ISR(TIMER4_OVF_vect) {
     }
     
     if (OCR4C == TIMER4_TOP_31KHZ) {
-        // 31.2kHzの場合カウンタを２個進める
-        timerCntr += 2;
-    } else {
-        // 15.6kHzの場合は１個
+        // 31.2kHzの場合カウンタを１個進める
         ++timerCntr;
+    } else {
+        // 15.6kHzの場合は２個
+        timerCntr += 2;
     }
-    if (timerCntr >= 61) {    // 58?
+    if (timerCntr >= 122) {    // 58?
         timerCntr = 0;
     }
 }

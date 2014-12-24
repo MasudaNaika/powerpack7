@@ -168,7 +168,7 @@ PROGMEM TRAIN_DATA trainData2 = {
 };
 
 //==========================================================================================
-// パターン3 DL
+// パターン3 God father
 //==========================================================================================
 PROGMEM uint8_t notchMaxSpeedA3[] = {
     5, 20, 40, 60, 120
@@ -180,16 +180,24 @@ PROGMEM uint8_t notchAccelDataB3[] = {
     4,  8, 12, 16, 20
 };
 PROGMEM PWM_DATA pwmDataA3[] = {
-    { 130,     140,       5},
-    { 140,     200,      50},
-    { 150,     190,     100},
-    { 250,     700,     120},
-    { 700,    2550,     255}
+    { 330,     330,       2},
+    { 440,     440,       4},
+    { 523,     523,       6},
+    { 493,     493,       8},
+    { 440,     440,      10},
+    { 523,     523,      12},
+    { 440,     440,      14},
+    { 493,     493,      16},
+    { 440,     440,      18},
+    { 349,     349,      20},
+    { 392,     392,      22},
+    { 330,     330,      30},
+    { 330,    1200,     120}
 };
 PROGMEM PWM_DATA pwmDataB3[] = {
 };
 PROGMEM TRAIN_DATA trainData3 = {
-    "DL",
+    "God father",
     20, 40,
     notchMaxSpeedA3, sizeof(notchMaxSpeedA3) / sizeof(uint8_t),
     notchAccelDataA3, sizeof(notchAccelDataA3) / sizeof(uint8_t),
