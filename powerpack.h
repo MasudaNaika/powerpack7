@@ -7,7 +7,7 @@
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
 
-#define F_CPU        16000000
+//#define F_CPU        16000000
 #define PWM_CONST    (F_CPU / 2)
 
 //==========================================================================================

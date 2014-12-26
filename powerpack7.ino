@@ -27,8 +27,8 @@
 #define UI_LOOP_DELAY        50
 #define ENCODER_SHIFT        2    // １デテント４カウントなので４で割る
 
-#define FONT_WIDTH           6
-#define FONT_HEIGHT          8
+#define FNT_WIDTH            6
+#define FNT_HEIGHT           8
 #define FONT_SIZE_INFO       1
 #define FONT_SIZE_SETTING    2
 #define FONT_SIZE_ALERT      2
@@ -725,37 +725,37 @@ void showBaseDriveScreen() {
     lcd.setTextSize(FONT_SIZE_INFO);
     // 列車タイプ
     lcd.setTextColor(MAGENTA, BLACK);
-    lcd.setCursor(0, FONT_SIZE_NOTCH * FONT_HEIGHT);
+    lcd.setCursor(0, FONT_SIZE_NOTCH * FNT_HEIGHT);
     lcd.print("Train:");
     lcd.print(getTrainNamePtr(PP.trainDataPtr));
     // Light
     lcd.setTextColor(WHITE, BLACK);
-    lcd.setCursor(X_LEFT, FONT_SIZE_NOTCH * FONT_HEIGHT 
-        + FONT_SIZE_INFO * FONT_HEIGHT * MENU_TRAIN_NAME_ROW);
+    lcd.setCursor(X_LEFT, FONT_SIZE_NOTCH * FNT_HEIGHT 
+        + FONT_SIZE_INFO * FNT_HEIGHT * MENU_TRAIN_NAME_ROW);
     lcd.print("Light:");
     formattedPrint(PP.lightValue, 3);
     // Accel
-    lcd.setCursor(X_CENTER, FONT_SIZE_NOTCH * FONT_HEIGHT 
-        + FONT_SIZE_INFO * FONT_HEIGHT * MENU_TRAIN_NAME_ROW);
+    lcd.setCursor(X_CENTER, FONT_SIZE_NOTCH * FNT_HEIGHT 
+        + FONT_SIZE_INFO * FNT_HEIGHT * MENU_TRAIN_NAME_ROW);
     lcd.print("Accel:");
     formattedPrint(PP.accelValue, 3);
     // LUT
-    lcd.setCursor(X_LEFT, FONT_SIZE_NOTCH * FONT_HEIGHT 
-        + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 1));
+    lcd.setCursor(X_LEFT, FONT_SIZE_NOTCH * FNT_HEIGHT 
+        + FONT_SIZE_INFO * FNT_HEIGHT * (MENU_TRAIN_NAME_ROW + 1));
     lcd.print("Lut  :");
     formattedPrint(PP.lutType, 3);
     // SoundDuty
-    lcd.setCursor(X_CENTER, FONT_SIZE_NOTCH * FONT_HEIGHT 
-        + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 1));
+    lcd.setCursor(X_CENTER, FONT_SIZE_NOTCH * FNT_HEIGHT 
+        + FONT_SIZE_INFO * FNT_HEIGHT * (MENU_TRAIN_NAME_ROW + 1));
     lcd.print("SDuty:");
     formattedPrint(PP.soundDuty, 3);
     // MotorDuty
-    lcd.setCursor(X_LEFT, FONT_SIZE_NOTCH * FONT_HEIGHT 
-        + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
+    lcd.setCursor(X_LEFT, FONT_SIZE_NOTCH * FNT_HEIGHT 
+        + FONT_SIZE_INFO * FNT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
     lcd.print("MDuty:");
     // Sound Freq
-    lcd.setCursor(X_CENTER, FONT_SIZE_NOTCH * FONT_HEIGHT 
-        + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
+    lcd.setCursor(X_CENTER, FONT_SIZE_NOTCH * FNT_HEIGHT 
+        + FONT_SIZE_INFO * FNT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
     lcd.print("Freq:");
 }
 
@@ -769,8 +769,8 @@ void updateLCD() {
         lcd.setTextColor(WHITE, BLACK);
         lcd.setTextSize(FONT_SIZE_INFO);
         // "Freq:".length() = 5;
-        lcd.setCursor(X_CENTER + FONT_WIDTH * 5, FONT_SIZE_NOTCH * FONT_HEIGHT 
-            + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
+        lcd.setCursor(X_CENTER + FNT_WIDTH * 5, FONT_SIZE_NOTCH * FNT_HEIGHT 
+            + FONT_SIZE_INFO * FNT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
         formattedPrint(value, 5);
         PP.dispFrequency = value;
     }
@@ -785,8 +785,8 @@ void updateLCD() {
         lcd.setTextColor(WHITE, BLACK);
         lcd.setTextSize(FONT_SIZE_INFO);
         // "MDuty:".length() = 6
-        lcd.setCursor(FONT_WIDTH * 6, FONT_SIZE_NOTCH * FONT_HEIGHT 
-            + FONT_SIZE_INFO * FONT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
+        lcd.setCursor(FNT_WIDTH * 6, FONT_SIZE_NOTCH * FNT_HEIGHT 
+            + FONT_SIZE_INFO * FNT_HEIGHT * (MENU_TRAIN_NAME_ROW + 2));
         formattedPrint(value >> 8, 3);
         PP.dispTrainSpeed = value;
     }
@@ -816,11 +816,11 @@ void updateLCD() {
             // ニュートラル
             if (PP.dispNotchPos != NOTCH_OFF) {
                 lcd.fillRect(X_NOTCH_OFFSET2, 0, X_NOTCH_OFFSET1 - X_NOTCH_OFFSET2, 
-                    (FONT_HEIGHT - 1) * FONT_SIZE_NOTCH, BLACK);
-                lcd.fillRect(X_NOTCH_OFFSET1 + FONT_WIDTH * FONT_SIZE_NOTCH, 0,
-                    X_NOTCH_OFFSET2 + FONT_WIDTH * FONT_SIZE_NOTCH + (FONT_WIDTH - 1) * FONT_SIZE_NOTCH
-                        - (X_NOTCH_OFFSET1 + FONT_WIDTH * FONT_SIZE_NOTCH), 
-                    (FONT_HEIGHT - 1) * FONT_SIZE_NOTCH, BLACK);
+                    (FNT_HEIGHT - 1) * FONT_SIZE_NOTCH, BLACK);
+                lcd.fillRect(X_NOTCH_OFFSET1 + FNT_WIDTH * FONT_SIZE_NOTCH, 0,
+                    X_NOTCH_OFFSET2 + FNT_WIDTH * FONT_SIZE_NOTCH + (FNT_WIDTH - 1) * FONT_SIZE_NOTCH
+                        - (X_NOTCH_OFFSET1 + FNT_WIDTH * FONT_SIZE_NOTCH), 
+                    (FNT_HEIGHT - 1) * FONT_SIZE_NOTCH, BLACK);
             }
             lcd.setCursor(X_NOTCH_OFFSET1, 0);
             if (PP.dispTrainSpeed == 0) {
@@ -931,9 +931,9 @@ void showMenuItem(uint8_t menuItem, boolean invert) {
     } else {
         lcd.setTextColor(WHITE, BLACK);
     }
-    uint8_t y = FONT_HEIGHT * FONT_SIZE_SETTING * menuItem;
+    uint8_t y = FNT_HEIGHT * FONT_SIZE_SETTING * menuItem;
     if (menuItem > MENU_ITEM_TRAIN) {
-        y += FONT_HEIGHT * FONT_SIZE_INFO * MENU_TRAIN_NAME_ROW;
+        y += FNT_HEIGHT * FONT_SIZE_INFO * MENU_TRAIN_NAME_ROW;
     }
     lcd.setCursor(X_LEFT, y);
     lcd.print(getMenuItemPtr(menuItem));
@@ -948,21 +948,21 @@ void showItemValue(uint8_t menuItem, uint8_t value, boolean invert) {
     } else {
         lcd.setTextColor(WHITE, BLACK);
     }
-    uint8_t y = FONT_HEIGHT * FONT_SIZE_SETTING * menuItem;
+    uint8_t y = FNT_HEIGHT * FONT_SIZE_SETTING * menuItem;
     if (menuItem > MENU_ITEM_TRAIN) {
-        y += FONT_HEIGHT * FONT_SIZE_INFO * MENU_ITEM_TRAIN;
+        y += FNT_HEIGHT * FONT_SIZE_INFO * MENU_ITEM_TRAIN;
     }
-    lcd.setCursor(X_LEFT + FONT_WIDTH * FONT_SIZE_SETTING * MENU_ITEM_LENGTH, y);
+    lcd.setCursor(X_LEFT + FNT_WIDTH * FONT_SIZE_SETTING * MENU_ITEM_LENGTH, y);
     formattedPrint(value, 3);
 }
 
 // メニューに列車名を表示する
 void showTrainType(uint8_t value) {
-    lcd.fillRect(0, FONT_HEIGHT * FONT_SIZE_SETTING * (MENU_ITEM_TRAIN + 1)
-        , 128, FONT_HEIGHT * FONT_SIZE_INFO * MENU_TRAIN_NAME_ROW, BLACK);
+    lcd.fillRect(0, FNT_HEIGHT * FONT_SIZE_SETTING * (MENU_ITEM_TRAIN + 1)
+        , 128, FNT_HEIGHT * FONT_SIZE_INFO * MENU_TRAIN_NAME_ROW, BLACK);
     lcd.setTextSize(FONT_SIZE_INFO);
     lcd.setTextColor(WHITE, BLACK);
-    lcd.setCursor(X_LEFT, FONT_HEIGHT * FONT_SIZE_SETTING * (MENU_ITEM_TRAIN + 1));
+    lcd.setCursor(X_LEFT, FNT_HEIGHT * FONT_SIZE_SETTING * (MENU_ITEM_TRAIN + 1));
     lcd.print(getTrainNamePtr(getTrainDataPtr(value)));
 }
 
