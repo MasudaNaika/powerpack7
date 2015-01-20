@@ -14,8 +14,8 @@
 // PIN definitions, unable to use PB3(MISO) as GPIO?
 //==========================================================================================
 #define PIN_CS     17    // PB0, LCD CS
-#define PIN_SCK    15    // PB1, LCD SCK, Fixed
-#define PIN_SDA    16    // PB2, LCD SDA, Fixed
+//#define PIN_SCK    TXLED0    // PD5, LCD SCK, MSPIM, Fixed
+//#define PIN_SDA    1     // PD3, LCD SDA, MSPIM, Fixed
 #define PIN_A0     8     // PB4, LCD A0
 #define PIN_RST    9     // PB5, LCD RST
 #define PIN_BTN    11    // PB7, Push button, pull up
